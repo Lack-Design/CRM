@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Lack Design — Contacts KND</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f0f2f5; color:#1a1a1a; -webkit-font-smoothing:antialiased; font-size:13px; }
+
+  /* HEADER */
+  .header { background:#1A3A6B; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:200; gap:10px; }
+  .header h1 { color:#fff; font-size:15px; font-weight:600; white-space:nowrap; }
+  .header-right { display:flex; align-items:center; gap:8px; }
+  .count-badge { background:rgba(255,255,255,.15); color:#fff; padding:3px 10px; border-radius:12px; font-size:11px; white-space:nowrap; }
+
+  /* TOOLBAR */
+  .toolbar { background:#fff; padding:10px 16px; display:flex; gap:8px; flex-wrap:wrap; border-bottom:1px solid #e5e7eb; position:sticky; top:52px; z-index:100; }
+  input[type=text] { flex:1; min-width:160px; padding:7px 11px; border:1px solid #d1d5db; border-radius:6px; font-size:12px; outline:none; }
+  input[type=text]:focus { border-color:#1A3A6B; box-shadow:0 0 0 2px rgba(26,58,107,.12); }
+  select { padding:7px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:12px; background:#fff; cursor:pointer; outline:none; }
+  select:focus { border-color:#1A3A6B; }
+  .btn { padding:7px 13px; border:none; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; white-space:nowrap; }
+  .btn-primary { background:#1A3A6B; color:#fff; }
+  .btn-primary:hover { background:#2a5298; }
+  .btn-success { background:#059669; color:#fff; }
+  .btn-success:hover { background:#047857; }
+  .btn-danger { background:#dc2626; color:#fff; }
+  .btn-danger:hover { background:#b91c1c; }
+  .btn-secondary { background:#f3f4f6; color:#374151; border:1px solid #d1d5db; }
+  .btn-secondary:hover { background:#e5e7eb; }
+
+  /* STATS */
+  .stats { background:#fff; padding:8px 16px; display:flex; gap:14px; border-bottom:1px solid #e5e7eb; font-size:11px; color:#6b7280; flex-wrap:wrap; }
+  .stat-item { display:flex; align-items:center; gap:4px; }
+  .stat-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+  /* TABLE */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; background:#fff; min-width:900px; }
+  th { background:#f9fafb; padding:9px 10px; text-align:left; font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.05em; border-bottom:2px solid #e5e7eb; cursor:pointer; user-select:none; white-space:nowrap; }
+  th:hover { background:#f3f4f6; color:#1A3A6B; }
+  td { padding:8px 10px; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
+  tr:hover td { background:#f9fafb; }
+  tr.exclu td { opacity:.4; }
+
+  .nom-cell .nom { font-weight:500; color:#111; }
+  .nom-cell .org { font-size:10px; color:#9ca3af; margin-top:1px; }
+
+  .tel-cell a { color:#1A3A6B; text-decoration:none; font-weight:500; font-size:12px; }
+  .tel-cell a:hover { text-decoration:underline; }
+  .tel2 { font-size:10px; color:#9ca3af; }
+
+  .email-cell { font-size:11px; }
+  .email-cell a { color:#6b7280; text-decoration:none; }
+  .email-cell a:hover { color:#1A3A6B; }
+  .no-email { color:#d1d5db; }
+
+  /* CHECKBOX EMAIL */
+  .check-email { width:16px; height:16px; cursor:pointer; accent-color:#1A3A6B; }
+
+  /* BADGES SECTEUR */
+  .badge { display:inline-block; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:500; }
+  .badge-Cheminée { background:#fef3c7; color:#92400e; }
+  .badge-Sanitaire { background:#dbeafe; color:#1e40af; }
+  .badge-Menuiserie { background:#d1fae5; color:#065f46; }
+  .badge-Carrelage { background:#ede9fe; color:#5b21b6; }
+  .badge-Cuisine { background:#fce7f3; color:#9d174d; }
+  .badge-Autre { background:#f3f4f6; color:#6b7280; }
+
+  /* STATUT SELECT */
+  .statut-sel { padding:4px 6px; border-radius:4px; font-size:11px; cursor:pointer; border:1px solid; font-weight:500; max-width:130px; }
+  .st-mail-envoyer { border-color:#fbbf24; color:#92400e; background:#fffbeb; }
+  .st-mail-envoye { border-color:#60a5fa; color:#1e40af; background:#eff6ff; }
+  .st-reponse { border-color:#34d399; color:#065f46; background:#ecfdf5; }
+  .st-interesse { border-color:#10b981; color:#064e3b; background:#d1fae5; }
+  .st-relancer { border-color:#f87171; color:#991b1b; background:#fef2f2; }
+  .st-pas-interesse { border-color:#d1d5db; color:#6b7280; background:#f9fafb; }
+  .st-exclu { border-color:#6b7280; color:#374151; background:#f3f4f6; }
+
+  /* DATE + NOTES */
+  .date-input { padding:4px 6px; border:1px solid #e5e7eb; border-radius:4px; font-size:11px; width:100px; }
+  .date-input:focus { border-color:#1A3A6B; outline:none; }
+  .notes-input { padding:4px 6px; border:1px solid #e5e7eb; border-radius:4px; font-size:11px; width:100%; min-width:80px; }
+  .notes-input:focus { border-color:#1A3A6B; outline:none; }
+
+  /* BTN SUPPR */
+  .btn-del { background:none; border:none; color:#d1d5db; cursor:pointer; font-size:15px; padding:2px 6px; border-radius:4px; }
+  .btn-del:hover { color:#dc2626; background:#fef2f2; }
+
+  /* EMPTY */
+  .empty { text-align:center; padding:50px; color:#9ca3af; background:#fff; }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:500; align-items:center; justify-content:center; }
+  .modal-overlay.show { display:flex; }
+  .modal { background:#fff; border-radius:10px; padding:24px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .modal h3 { font-size:15px; font-weight:600; margin-bottom:8px; }
+  .modal p { font-size:13px; color:#6b7280; margin-bottom:20px; }
+  .modal-actions { display:flex; gap:8px; justify-content:flex-end; }
+  .modal label { display:block; font-size:12px; font-weight:500; color:#374151; margin-bottom:4px; margin-top:12px; }
+  .modal input, .modal select { width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; outline:none; }
+  .modal input:focus, .modal select:focus { border-color:#1A3A6B; }
+
+  /* SAVE INDICATOR */
+  .save-indicator { font-size:11px; color:rgba(255,255,255,.7); }
+  .save-indicator.saved { color:#86efac; }
+  .badge-pcad { background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; font-size:10px; padding:1px 6px; border-radius:8px; font-weight:600; }
+  .check-pcad { width:15px; height:15px; cursor:pointer; accent-color:#0369a1; }
+</style>
+<!-- Google API -->
+<script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</head>
+<body>
+
+<div class="header">
+  <h1>CRM Lack Design — Contacts KND</h1>
+  <div class="header-right">
+    <span class="save-indicator" id="saveIndicator">● Non connecté</span>
+    <button class="btn" id="driveBtn" onclick="driveConnect()" style="background:rgba(255,255,255,.15);color:#fff;font-size:11px;padding:4px 10px;">⟳ Connecter Drive</button>
+    <span class="count-badge" id="countBadge">273 contacts</span>
+  </div>
+</div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="🔍 Rechercher..." oninput="applyFilters()">
+  <select id="fSecteur" onchange="applyFilters()">
+    <option value="">Tous secteurs</option>
+    <option>Cheminée</option>
+    <option>Sanitaire</option>
+    <option>Menuiserie</option>
+    <option>Carrelage</option>
+    <option>Cuisine</option>
+    <option>Autre</option>
+  </select>
+  <select id="fStatut" onchange="applyFilters()">
+    <option value="">Tous statuts</option>
+    <option>Mail à envoyer</option>
+    <option>Mail envoyé</option>
+    <option>Réponse reçue</option>
+    <option>Intéressé</option>
+    <option>À relancer</option>
+    <option>Pas intéressé</option>
+    <option>Exclu</option>
+  </select>
+  <select id="fEmail" onchange="applyFilters()">
+    <option value="">Tous</option>
+    <option value="1">Avec email</option>
+    <option value="0">Sans email</option>
+  </select>
+  <select id="fCanton" onchange="applyFilters()">
+    <option value="">Tous cantons</option>
+    <option>Vaud</option>
+    <option>Genève</option>
+    <option>Valais</option>
+    <option>Neuchâtel</option>
+    <option>Fribourg</option>
+    <option>Jura</option>
+    <option>Multi-cantons</option>
+  </select>
+  <select id="fPcad" onchange="applyFilters()">
+    <option value="">Tous</option>
+    <option value="1">Client PaletteCAD</option>
+    <option value="0">Non PaletteCAD</option>
+  </select>
+  <button class="btn btn-success" onclick="openAddModal()">+ Ajouter</button>
+  <button class="btn btn-secondary" onclick="exportCSV()">⬇ CSV</button>
+</div>
+
+<div class="stats" id="statsBar"></div>
+
+<div class="table-wrap">
+<table id="mainTable">
+  <thead>
+    <tr>
+      <th onclick="sortBy('nom')">Contact ↕</th>
+      <th onclick="sortBy('secteur')">Secteur ↕</th>
+      <th>Téléphone</th>
+      <th>Email</th>
+      <th onclick="sortBy('canton')">Canton ↕</th>
+      <th style="text-align:center">✉</th>
+      <th style="text-align:center" title="Client PaletteCAD">PCAD</th>
+      <th onclick="sortBy('statut')">Statut ↕</th>
+      <th>Date envoi</th>
+      <th>Notes</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="empty" id="emptyMsg" style="display:none">Aucun contact trouvé</div>
+
+<!-- MODAL CONFIRMATION SUPPRESSION -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal">
+    <h3>Supprimer ce contact ?</h3>
+    <p id="delModalName"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('delModal')">Annuler</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AJOUT -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h3>Ajouter un contact</h3>
+    <label>Nom / Prénom</label>
+    <input type="text" id="addNom" placeholder="Nom complet">
+    <label>Société</label>
+    <input type="text" id="addOrg" placeholder="Nom de la société">
+    <label>Téléphone</label>
+    <input type="text" id="addTel" placeholder="+41 00 000 00 00">
+    <label>Email</label>
+    <input type="text" id="addEmail" placeholder="email@société.ch">
+    <label>Secteur</label>
+    <select id="addSecteur">
+      <option>Cheminée</option>
+      <option>Sanitaire</option>
+      <option>Menuiserie</option>
+      <option>Carrelage</option>
+      <option>Cuisine</option>
+      <option>Autre</option>
+    </select>
+    <label>Canton</label>
+    <select id="addCanton">
+      <option value=""></option>
+      <option>Vaud</option>
+      <option>Genève</option>
+      <option>Valais</option>
+      <option>Neuchâtel</option>
+      <option>Fribourg</option>
+      <option>Jura</option>
+      <option>Multi-cantons</option>
+      <option>Autre/inconnu</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px;margin-top:10px;">
+      <input type="checkbox" id="addPcad" style="width:16px;height:16px;accent-color:#0369a1;">
+      Client PaletteCAD
+    </label>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-secondary" onclick="closeModal('addModal')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmAdd()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- GOOGLE DRIVE CONFIG ----
+const CLIENT_ID = '505442840775-it64790aqg2pfv91dgb3c0l1lsnq9pl3.apps.googleusercontent.com'; // À remplacer
+const API_KEY = 'AIzaSyAeICGqC_Cwv-nNKkDptQGixYA8aiQj6X0';     // À remplacer
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILE_NAME = 'CRM_KND_data.json';
+const STORAGE_KEY = 'lackdesign_crm_v3'; // fallback local
+
+let driveFileId = null;
+let tokenClient = null;
+let gapiInited = false;
+let gisInited = false;
+let driveConnected = false;
+const INIT_DATA = [{"id": 0, "nom": "A-Z Montagen & Kaminbau AG", "org": "", "tel": "071 763 63 00", "tel2": "", "email": "a-z@a-z-montagen.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 1, "nom": "adrian bayerl", "org": "RUPPS AG", "tel": "+41 79 903 13 98", "tel2": "", "email": "adrian.bayerl@ruppsag.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 2, "nom": "adrian bayerl", "org": "RUPPS AG", "tel": "+41 79 903 13 98", "tel2": "", "email": "adrian.bayerl@ruppsag.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 3, "nom": "Alain Gremaud Au Feu de Bois Bullag SA", "org": "", "tel": "026 919 61 51", "tel2": "", "email": "info@bullag.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "", "canton": "", "palettecad": true}, {"id": 4, "nom": "Alain Rochat", "org": "Rochat Menuiserie S.A.", "tel": "+41 79 212 63 33", "tel2": "00 41 21 845 57 58 ::: 021 845 57 92 ::: +41 21 845 60 52", "email": "alain.rochat@rochatmenuiserie.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 5, "nom": "Alain Rochat", "org": "Rochat Menuiserie S.A.", "tel": "00 41 21 845 57 58", "tel2": "021 845 57 95", "email": "", "hasEmail": false, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 6, "nom": "Alain Rochat", "org": "Rochat Menuiserie S.A.", "tel": "00 41 21 845 57 58 ::: 021 845 57 92", "tel2": "+41 79 212 63 33", "email": "", "hasEmail": false, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 7, "nom": "Albert KASTRATI", "org": "SanitärTech GmbH", "tel": "052 202 44 64", "tel2": "", "email": "", "hasEmail": false, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 8, "nom": "alpinofen AG", "org": "", "tel": "+41412505511", "tel2": "", "email": "info@alpinofen.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 9, "nom": "Anaklet Hübscher TU", "org": "Anaklet Hübscher Ofen- / Cheminéebau, Plattenbeläge", "tel": "+4152 740 28 19", "tel2": "+41 78 770 51 69 ::: +41 78 770 51 69", "email": "kontakt@huebscher-ofenbau.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 10, "nom": "Andrea Kamer Start", "org": "", "tel": "+41 78 6524818", "tel2": "", "email": "Andrea_Kamer@yahoo.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 11, "nom": "Andreas BISANG", "org": "Sanitär Gschwend AG", "tel": "+41 (61) 302 94 97", "tel2": "079 550 50 70", "email": "", "hasEmail": false, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 12, "nom": "ANDREAS FONTANESI Dätwyler Ofenbau AG PROJEKTLEITER  GEBÄUDETECHNIKER HF", "org": "Dätwyler Ofenbau AG", "tel": "+41 62 726 27 70", "tel2": "", "email": "af@daetwyler-ofenbau.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 13, "nom": "Andreas Schnyder", "org": "Spichtig AG", "tel": "041 833 80 10", "tel2": "", "email": "a.schnyder@styro.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 14, "nom": "Andreas Schnyder", "org": "Spichtig AG", "tel": "041 833 80 10", "tel2": "", "email": "a.schnyder@styro.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 15, "nom": "André FÄSSLER", "org": "Fässler Architektur GmbH", "tel": "061 331 54 54", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 16, "nom": "Anna Ruegg", "org": "Rüegg AG Spengler Sanitär Solar", "tel": "+41 44 938 33 16", "tel2": "+41 79 640 39 91", "email": "Casagranda@rubema.ch", "hasEmail": true, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 17, "nom": "AQWA", "org": "Herbert Würsch", "tel": "+41 416189003", "tel2": "+41 79 208 75 38", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 18, "nom": "Arnaud Maillard BOIS", "org": "", "tel": "+41 79 700 24 45", "tel2": "", "email": "", "hasEmail": false, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 19, "nom": "Basil Richter start avec expose Füür & Flamme", "org": "", "tel": "+41 774656954", "tel2": "+41 77 533 35 57", "email": "basil.richter@hotmail.com", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 20, "nom": "Basil Richter start avec expose Füür & Flamme", "org": "", "tel": "+41 77 533 35 57", "tel2": "+41774656954", "email": "basil.richter@hotmail.com", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 21, "nom": "BATIFEU Sàrl", "org": "", "tel": "+41 78 731 51 50", "tel2": "024 472 27 38", "email": "Gregoire.Morisod@gmail.com", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "", "canton": "", "palettecad": true}, {"id": 22, "nom": "Beat Reusser", "org": "Holzbauburo Du", "tel": "+41788520444", "tel2": "", "email": "reusserbeat@gmail.com", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 23, "nom": "Berger AG", "org": "", "tel": "+41 32 377 20 52", "tel2": "", "email": "berger-ofenbau@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 24, "nom": "Binak Selmanaj Small Business", "org": "", "tel": "+41 79 909 66 69", "tel2": "", "email": "info@bs-umbauten.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 25, "nom": "Brügger Keramikbeläge", "org": "", "tel": "033 671 03 04", "tel2": "079 423 33 73", "email": "info@bruegger-keramik.ch", "hasEmail": true, "secteur": "Carrelage", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 26, "nom": "BULA AG", "org": "", "tel": "+41 52 320 00 93", "tel2": "+41 79 218 22 02", "email": "juerg.hofmann@bula-ag.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 27, "nom": "Cea Damiano", "org": "", "tel": "078 949 24 34", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 28, "nom": "Cera Rapelli", "org": "", "tel": "+41 79 697 90 70", "tel2": "041 390 15 93", "email": "info@cera-fire.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 29, "nom": "Cheminéebau AG", "org": "", "tel": "+41 44 737 15 65", "tel2": "+41794356419", "email": "info@chemineestutz.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 30, "nom": "Cheminéebau Hufenus", "org": "", "tel": "079 694 42 27", "tel2": "031 850 15 15", "email": "info@hufenus.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 31, "nom": "Chistoph In-Albon", "org": "E.In-Albon AG", "tel": "079 417 3546", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 32, "nom": "Chistoph In-Albon responsable palettecad", "org": "E.In-Albon AG", "tel": "+4179 417 3546", "tel2": "", "email": "info@in-albon-zermatt.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 33, "nom": "Christener Cheminées SA Paul", "org": ". Mit Sp", "tel": "+41 223637992", "tel2": "+41 79 310 14 16", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 34, "nom": "Christian Kulmer", "org": "Norm Holz Bau AG", "tel": "+41 52 743 16 16", "tel2": "+41 52 743 16 18", "email": "christian.kulmer@nhb.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 35, "nom": "christian merz", "org": "", "tel": "+41 79 452 29 78", "tel2": "+41 41 530 06 90", "email": "info@schreinereimerz.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 36, "nom": "Christof Giezendanner", "org": "Gebr. Giezendanner", "tel": "+41796272416", "tel2": "071 993 22 20", "email": "christof@gebrgiezendanner.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 37, "nom": "Claudio Meneghetti", "org": "Fierz E. Schreinerei GmbH", "tel": "+41 79 843 75 71", "tel2": "", "email": "schreinerei@fierz.swiss", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 38, "nom": "Claudio Weishaupt TU Scrinaria Weishaupt", "org": "Patron Cnc", "tel": "+41 78 794 20 60", "tel2": "+41819368200", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 39, "nom": "Dano GmbH", "org": "", "tel": "+41 76 421 57 32", "tel2": "", "email": "d.maurer@dminteriors.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 40, "nom": "David In-Albon", "org": "E.In-Albon AG", "tel": "0786673249", "tel2": "", "email": "info@in-albon-zermatt.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 41, "nom": "David Monsch Schreiner START", "org": "", "tel": "+41 79 266 63 76 ::: +41 79 266 63 76", "tel2": "", "email": "david@monschschreinermontage.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 42, "nom": "Deborah Gehri  TU Gehri Rivestimenti", "org": "", "tel": "+41762323016", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 43, "nom": "Deborah gehri Vieux Nr", "org": "Gehri Rivestimenti", "tel": "+41 79 296 38 57", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 44, "nom": "Deborah Peters Ex", "org": "", "tel": "+41 76 605 82 95", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 45, "nom": "Designo GmbH", "org": "", "tel": "+41 79 945 14 78", "tel2": "+595 986 878444", "email": "contact@designio-gmbh.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 46, "nom": "Dessinateur Burgler", "org": "Bula AG Bis 02.2017 Ensuite A Son Compte", "tel": "079 756 32 55", "tel2": "+41 52 320 00 97", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 47, "nom": "Dessinateur Burgler", "org": "Bula AG Bis 02.2017 Ensuite A Son Compte", "tel": "079 756 32 55", "tel2": "+41 52 320 00 97", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 48, "nom": "dessinateur de ? en home office DE", "org": "", "tel": "+41 79 350 18 49", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 49, "nom": "Dessinateur Neoplan Sp", "org": "Neoplan GmbH.", "tel": "+41799604152", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 50, "nom": "Dessinateur. TU", "org": "Carron Sa", "tel": "+41793778176", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 51, "nom": "DILLIER AG", "org": "", "tel": "041 660 45 22", "tel2": "", "email": "info@dilliersarnen.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 52, "nom": "Dominic Jud", "org": "", "tel": "+41 71 351 19 24", "tel2": "", "email": "ofenbau-jud@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 53, "nom": "Era Küchen Erjon Rexhepi", "org": "fait direckt depuis DE", "tel": "+41 79 569 60 85", "tel2": "+43 6 641 65 02 67", "email": "dodo.m75@web.de", "hasEmail": true, "secteur": "Cuisine", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 54, "nom": "Erich Scheuss", "org": "Scheuss Ofenbau GmbH", "tel": "071 790 00 18", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 55, "nom": "Ex Holinger, Frei", "org": "Mavi-stone", "tel": "+41796450213", "tel2": "+41617038179", "email": "info@mavi-stone.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 56, "nom": "Fabricatur AG Herr Gabor Messerli Group", "org": "Pcad", "tel": "00 41 79 126 11 17", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 57, "nom": "Ferdo SAVODELLI", "org": "", "tel": "+41 78 805 35 00", "tel2": "+41796638175", "email": "ferdo.savoldelli@lisignoli-bivio.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 58, "nom": "Florence Perraudin", "org": "Benoit Carron SA SP", "tel": "+41 27 776 28 58", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 59, "nom": "Florence ROCHAT", "org": "", "tel": "+41 79 289 68 75", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 60, "nom": "Franziska Fish", "org": "Ganz & CO.  Planerin", "tel": "+41712828535", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 61, "nom": "Frau Müller Wüest & Cie AG", "org": "", "tel": "+41 627 48 40 40", "tel2": "+41 79 129 11 75", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 62, "nom": "Frau Müller Wüest & Cie AG", "org": "", "tel": "+41 627 48 40 45", "tel2": "+41 79 129 11 75", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 63, "nom": "Fredy Ruswil", "org": ". Tu", "tel": "+41414951055", "tel2": "+41792931378", "email": "info@ofner-theiler.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 64, "nom": "Frowin AG", "org": "", "tel": "+41417663170", "tel2": "", "email": "info@frowin-andermatt.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 65, "nom": "Fuurparadies Fille Schwarzkopf", "org": "", "tel": "079 751 42 47", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 66, "nom": "Füürparadies GmbH", "org": "", "tel": "+41 618279000", "tel2": "", "email": "urs.feuerparadies@teleport.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 67, "nom": "Füürparadies GmbH", "org": "", "tel": "+41618279000", "tel2": "", "email": "urs.feuerparadies@teleport.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 68, "nom": "Gabriel Ott", "org": "", "tel": "0041 071 983 39 51", "tel2": "0041 071 983 39 39", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 69, "nom": "Gabriel Ott  facture sp pas payée  konflit", "org": "", "tel": "0041 071 983 39 51", "tel2": "0041 071 983 39 39", "email": "info@ott-ofenbau.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 70, "nom": "Gaille Cheminée", "org": "", "tel": "0041 21 731 21 66", "tel2": "", "email": "info@gaille-cheminee.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "", "canton": "", "palettecad": true}, {"id": 71, "nom": "Gaille Cheminée", "org": "", "tel": "0041 21 731 21 66", "tel2": "", "email": "info@gaille-cheminee.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "", "canton": "", "palettecad": true}, {"id": 72, "nom": "Ganz AG", "org": "", "tel": "+41 44 8664444", "tel2": "", "email": "planung@ganz-baukeramik.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 73, "nom": "Ganz AG", "org": "", "tel": "+41 44 8664444", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 74, "nom": "Gashi Orange", "org": "Flammorama", "tel": "+41 763700700", "tel2": "+41 628898060", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 75, "nom": "Gehri Meinbau", "org": "", "tel": "+41 798204265", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 76, "nom": "Gempeler GmbH", "org": "", "tel": "079 434 98 48", "tel2": "026 496 36 87", "email": "info@ofengempeler.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 77, "nom": "Gilbert KOLLY", "org": "Kobal Sanitär GmbH", "tel": "062 776 4700", "tel2": "", "email": "info@kobal.ch", "hasEmail": true, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 78, "nom": "Gilbert KOLLY", "org": "Kobal Sanitär GmbH", "tel": "062 776 4700", "tel2": "", "email": "", "hasEmail": false, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 79, "nom": "Gregory Meuli", "org": "Paradisa GmbH", "tel": "+41 787166754", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 80, "nom": "Guido Galliker Start schreiner", "org": "Holzfabrik GmbH", "tel": "+41 56 640 26 30", "tel2": "", "email": "info@holzfabrik.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 81, "nom": "Gwerder-Tech GmbH", "org": "", "tel": "079 356 24 25", "tel2": "041 855 16 14", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 82, "nom": "Hama AG", "org": "", "tel": "+41 71 446 61 66", "tel2": "", "email": "info@hama-ag.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 83, "nom": "Hansueli HADORN", "org": "", "tel": "+41 76 429 17 17", "tel2": "+41 43 540 42 03", "email": "info@hadornbau.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 84, "nom": "harry müller", "org": "", "tel": "+42 78 665 15 25", "tel2": "+4233771292", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 85, "nom": "Helder Lopes", "org": "J.Schori cheminées + canaux S.A.", "tel": "026 460 55 43", "tel2": "", "email": "lopes@schori-cheminees.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 86, "nom": "Helder Lopes", "org": "J.Schori cheminées + canaux S.A.", "tel": "026 460 55 43", "tel2": "", "email": "lopes@schori-cheminees.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 87, "nom": "Helmuth KIEN sp stuttgart ?", "org": "", "tel": "+41 79 697 30 14", "tel2": "+41 81 771 16 87", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 88, "nom": "Herr Brunner", "org": "", "tel": "062 726 27 70", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 89, "nom": "Herr Hizem", "org": "", "tel": "+41793313535", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 90, "nom": "Herr Peter", "org": "", "tel": "+41344911001", "tel2": "", "email": "info@popag.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 91, "nom": "Herr Salate", "org": "SanitärTech GmbH", "tel": "+41 79 902 00 28", "tel2": "", "email": "", "hasEmail": false, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 92, "nom": "Herr Tinner", "org": "Fornax ag. .  SP", "tel": "+41 789296480", "tel2": "+41 32 682 61 71", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 93, "nom": "Heynen AG", "org": "", "tel": "+41794785465", "tel2": "", "email": "info@heynenag.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 94, "nom": "Heynen AG", "org": "", "tel": "+41 794785465", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 95, "nom": "Ilir BARUTI", "org": "Inter Edil.", "tel": "+41 76 577 75 59", "tel2": "027 470 16 84", "email": "info@interedil.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 96, "nom": "Imfel Pcad", "org": "", "tel": "+41794679469", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 97, "nom": "It De Deriaz Ag", "org": "Sp", "tel": "+41229999100", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 98, "nom": "It De Vauthier Sa NETmanage SA", "org": "", "tel": "+41 328461426", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 99, "nom": "It De Vauthier Sa NETmanage SA", "org": "", "tel": "+41328461426", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 100, "nom": "IT Peter Schleiss Mit Sp", "org": "Expo Chur.", "tel": "+41796102582", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 101, "nom": "Ivo ZINGG", "org": "Schneider AG", "tel": "+41 79 629 64 03", "tel2": "081 302 13 37", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 102, "nom": "Jan Peter", "org": "Wüest & Cie AG", "tel": "+41 79 620 14 63", "tel2": "", "email": "j.peter@wuest.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 103, "nom": "Jann MICHEL", "org": "Michel Öfen + Platten GmbH", "tel": "079 682 19 50", "tel2": "", "email": "jann.michel@schneebeli-ag.ch", "hasEmail": true, "secteur": "Carrelage", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 104, "nom": "Jean Marc", "org": "Butzberg Tu", "tel": "+41793027431", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 105, "nom": "Jean-Claude Roy", "org": "Menuiserie VAUTHIER SA", "tel": "+41 79 240 70 63", "tel2": "+41 32 842 45 42", "email": "", "hasEmail": false, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 106, "nom": "Joao Nogueira", "org": "Menuiserie Nogueira Sàrl", "tel": "+41 79 212 37 42", "tel2": "+41 21 802 28 29", "email": "nogueira.sa@bluewin.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 107, "nom": "Joël Coka", "org": "no sp", "tel": "+41718661983 ::: +41 76 385 13 37", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 108, "nom": "Juerg Zwicky", "org": "Müller AG  (Harald)", "tel": "+41 44 381 76 00", "tel2": "", "email": "juerg.zwicky@muellerag.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 109, "nom": "Julian AG", "org": "", "tel": "041 660 56 51", "tel2": "+41 79 642 65 61", "email": "r.anderhalden@julian-mueller.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 110, "nom": "Justin Marquis bois TU", "org": "", "tel": "+41 79 627 01 16", "tel2": "", "email": "justunski@bluewin.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 111, "nom": "Jäggi's Feuerpark", "org": "", "tel": "+41 44 784 32 11", "tel2": "", "email": "info@feuerpark.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 112, "nom": "Jérome Gübeli", "org": "", "tel": "+41797661962", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 113, "nom": "Jérôme ROSSIER", "org": "RC Cheminées Sàrl", "tel": "+41 78 765 38 79", "tel2": "+41273211660", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "", "canton": "", "palettecad": true}, {"id": 114, "nom": "Jürg MÜLLER", "org": "Müller-holz", "tel": "+41 78 707 65 40", "tel2": "0041 44 984 03 17", "email": "", "hasEmail": false, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 115, "nom": "K. Bernhardsgrütter Tiro AG", "org": "", "tel": "+41712829615", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 116, "nom": "Kamino AG", "org": "Kamino AG", "tel": "+41 79 356 53 66", "tel2": "+41323426920", "email": "info@kamino.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 117, "nom": "Kamino AG", "org": "Kamino AG", "tel": "+41 323426920", "tel2": "+41 79 356 53 66", "email": "info@kamino.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 118, "nom": "Karl AG", "org": "", "tel": "+41 41 660 1556", "tel2": "", "email": "info@moebel-omlin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 119, "nom": "Kobler Ofenbau Gmbh", "org": "", "tel": "+41 79 773 52 57", "tel2": "", "email": "info@kobler-ofenbau.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 120, "nom": "Kohler Innenarchitekt Quellacasa GmbH. Sp Orange", "org": "", "tel": "+41 794403874", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 121, "nom": "Küng Sauna", "org": "Projektleiter", "tel": "+41447839458", "tel2": "+41447839453", "email": "p.hoechner@kuengsauna.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 122, "nom": "Küng Sauna", "org": "Projektleiter", "tel": "+41 447839453", "tel2": "+41 447839458", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 123, "nom": "Leonhardt Spenglerei AG", "org": "Leonhardt Spenglerei AG", "tel": "+41 61 3011415", "tel2": "", "email": "sprecher@leonhardt.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 124, "nom": "Leonhardt Spenglerei AG", "org": "Leonhardt Spenglerei AG", "tel": "+41 61 3011415", "tel2": "", "email": "sprecher@leonhardt.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 125, "nom": "LORETAN OFENBAU & PLATTENBELÄGE", "org": "", "tel": "+41 79 282 99 26", "tel2": "+41 33 676 03 05", "email": "herbert@loretan-ofenbau.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 126, "nom": "LORETAN OFENBAU & PLATTENBELÄGE", "org": "", "tel": "+41 33 676 03 05", "tel2": "+41 79 282 99 26", "email": "herbert@loretan-ofenbau.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 127, "nom": "Loretan Offenbau", "org": "", "tel": "+41 79 282 99 26", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 128, "nom": "Maik SEURIG", "org": "BEO OFENDESIGN", "tel": "+41 79 795 00 01", "tel2": "+41 033 533 27 09", "email": "info@ofendesign.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 129, "nom": "Marc Huber", "org": "Perler Ofen GmbH", "tel": "+41 79 959 66 66", "tel2": "", "email": "m.huber@perler.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 130, "nom": "Marc Nyffenegger Fils De Peter Pcad", "org": "Nyffenegger Ofenbau", "tel": "079 378 71 47", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 131, "nom": "Marc SCHEIWILLER TU", "org": "Schweiwiller Raum Erleben GmbH", "tel": "+41792431494", "tel2": "044 942 00 42", "email": "info@scheiwiller-raum.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 132, "nom": "Marc-André Bühler", "org": "Ebénisterie Boegli S.A.", "tel": "032 481 29 15", "tel2": "079 292 74 10", "email": "ebenisterie.boegli@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 133, "nom": "Marcel AG", "org": "", "tel": "+41526493318", "tel2": "", "email": "marcel.ehrat@freesurf.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 134, "nom": "Marcel DILLIER  TU SP 7", "org": "Dillier Feuer+Platten AG", "tel": "+41 41 660 45 22", "tel2": "+41 79 340 79 88", "email": "md@dilliersarnen.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 135, "nom": "Marcel Lauber", "org": "opla", "tel": "+41 79 220 44 40", "tel2": "027 967 41 04", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 136, "nom": "Marcel Lauber TU", "org": "opla", "tel": "027 967 41 04", "tel2": "+41 79 220 44 40", "email": "info@opla.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 137, "nom": "Marco Truffer", "org": "", "tel": "+41 78 822 21 20", "tel2": "", "email": "marco.truffer@gmx.net", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 138, "nom": "Mario Christen", "org": "Kundenschreinerei Willy Christen", "tel": "+41 55 244 47 52", "tel2": "+41 79 323 51 77", "email": "willy.christen@vtxmail.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 139, "nom": "Mario Herger. De Trimble. Prend Cours Chez Moi", "org": "JOHN Haustechnik AG", "tel": "+41 61 971 13 29", "tel2": "+41795082325", "email": "info@john-haustechnik.ch", "hasEmail": true, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 140, "nom": "Markus DIETRICH", "org": "", "tel": "079 656 83 74", "tel2": "", "email": "dietrich.Schreinerei@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 141, "nom": "Markus Hartmann", "org": "", "tel": "+41 79 354 92 48", "tel2": "", "email": "m.hartmann@ggaweb.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 142, "nom": "Martin Röttele", "org": "Röttele & Partner AG", "tel": "+41 79 450 55 55", "tel2": "+41 81 286 95 65", "email": "info@ofenhaus.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 143, "nom": "Matthias Moser TU", "org": "Ex Schuler", "tel": "+41 79 636 99 13", "tel2": "", "email": "matthias_moser@gmx.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 144, "nom": "Menuiserie Carron benoit", "org": "", "tel": "+41 79 213 89 02", "tel2": "", "email": "benoit-carron@bluewin.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 145, "nom": "Menuiserie Fleury", "org": "", "tel": "078 626 06 12", "tel2": "", "email": "jmfleury37@bluewin.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 146, "nom": "Michel Juillera", "org": "Michel Juillera Ebenisterie SA", "tel": "+41 272033240", "tel2": "+41 79 411 53 59", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 147, "nom": "Miriam Zürcher", "org": "Vivacon AG.", "tel": "+41791766983", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 148, "nom": "Monsieur Meier Renogroup Dessinateur De M. Murati", "org": "Renogroup. Enterprise", "tel": "+41442606688", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 149, "nom": "Moritz Krumennacher noSP", "org": "Krummenacher Möbelwerkstatt und Montagen GmbH", "tel": "+41 41 497 31 92", "tel2": "+41 79 691 30 78", "email": "moritz.krummenacher@bluewin.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 150, "nom": "Murati Renogroup", "org": "", "tel": "+41566111001", "tel2": "+41791765389", "email": "info@renogroup.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 151, "nom": "Müller AG  Harald Müller Holz", "org": "", "tel": "+423 377 12 90", "tel2": "+41 78 665 15 25", "email": "harry.mueller@muellerag.com", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 152, "nom": "Noa Ulmer", "org": "tu", "tel": "+41 79 464 75 46", "tel2": "", "email": "noaulmer@gmail.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 153, "nom": "Norm Holzbau Ag", "org": "", "tel": "+41 79 283 75 04", "tel2": "", "email": "normholzbauag@bluewin.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 154, "nom": "Nuovaceramica S.a.g.l.  Albano Costa Fliesen Start", "org": "", "tel": "+41 79 669 15 31", "tel2": "", "email": "albacosta@bluewin.ch", "hasEmail": true, "secteur": "Carrelage", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 155, "nom": "Ofenbau Burri Ag", "org": "Pcad", "tel": "+41 79 688 86 20", "tel2": "+41 41 458 14 52", "email": "info@burri-ofenbau.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 156, "nom": "Ofenbau Maurer GmbH.", "org": "", "tel": "+41788064885", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 157, "nom": "Ofenbau Zeugin", "org": "ANDREAS ZEUGIN", "tel": "076 363 04 21", "tel2": "", "email": "andy.z@gmx.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 158, "nom": "Paradisa", "org": "", "tel": "+41556124660", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 159, "nom": "Patricia Nardozza", "org": "Privé", "tel": "+41763775797", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 160, "nom": "Patrick Bauer", "org": "BUESS SA", "tel": "026 670 14 54", "tel2": "026 670 40 44", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 161, "nom": "Patrick Josi  TU", "org": "small Business", "tel": "+41794278354", "tel2": "0041 33 673 16 34", "email": "info@ofenbau-josi.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 162, "nom": "Patrick Jovanovic", "org": "Hächler AG HOLZ enterprise", "tel": "+41798566393", "tel2": "+41562102771", "email": "patrick.jovanovic@haechler.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 163, "nom": "Patrik Bräuchi bp DESIGN AG Schreiner", "org": "", "tel": "+41 78 804 52 93", "tel2": "", "email": "patrik.braeuchi@bpdesign.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 164, "nom": "Paul Christener", "org": ". Mit Sp", "tel": "+41 79 310 14 16", "tel2": "+41223637997 ::: +41223637992", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 165, "nom": "Peider HOLZER", "org": "Holzer & Bott GmbH", "tel": "+41 81 854 23 73", "tel2": "", "email": "", "hasEmail": false, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 166, "nom": "PETER KIEBER ANSTALT", "org": "sp actif", "tel": "0041 78 703 19 60", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 167, "nom": "Peter Lanfranchi", "org": "Cucine Andreoletti Sarl", "tel": "+41796215169", "tel2": "+41818465631", "email": "peter.lanfranchi@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 168, "nom": "Peter Merz. CNC", "org": "Schreiner Merz", "tel": "+41 78 765 99 03", "tel2": "", "email": "peter.merz@schreinereimerz.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 169, "nom": "Philipp hauser  TU. Sans Sp. 2500.-", "org": "Hauser Ofenbau GmbH", "tel": "+41 79 486 72 94", "tel2": "+41435456060", "email": "info@hauserofenbau.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 170, "nom": "Philippe Beutler Sanitaire", "org": "Beutler sanitaire chauffage SA", "tel": "+41 793392783", "tel2": "+41 244303038", "email": "", "hasEmail": false, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 171, "nom": "Philippe BIETTE", "org": "l'Ajoulote SA", "tel": "+41 32 466 51 46", "tel2": "+41 79 208 30 75", "email": "lajoulote@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 172, "nom": "Pierre Nemitz", "org": "Cera Fire", "tel": "+41 79 675 37 93", "tel2": "+41 41 620 44 00", "email": "info@antikofen.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 173, "nom": "pierre rossier", "org": "", "tel": "+33 5 47 74 46 20", "tel2": "079 607 82 79", "email": "contact@sellsy.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 174, "nom": "R. Ritzi", "org": "", "tel": "+41 71 642 43 70", "tel2": "", "email": "schreinerei.ritzi@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 175, "nom": "R. Ritzi", "org": "", "tel": "+41 71 642 43 70", "tel2": "", "email": "schreinerei.ritzi@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 176, "nom": "Raad Patricia", "org": "Daniel Fournier Agencement SA", "tel": "+41 79 435 42 83", "tel2": "+41 27 721 61 81", "email": "Patricia.Raad@groupe-fournier.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 177, "nom": "Raad Patricia", "org": "Daniel Fournier Agencement SA", "tel": "+41 27 721 61 81", "tel2": "+41 79 435 42 83", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 178, "nom": "René KUSTER", "org": "", "tel": "+41 44 908 36 52", "tel2": "+41 71 969 19 99", "email": "Rene.Kuster@eisenring-kuechenbau.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 179, "nom": "Rhoner Pascal", "org": "Entremont cuisines sa", "tel": "+41 79 665  33 83", "tel2": "027 785 14 72", "email": "info@marchetsa.ch", "hasEmail": true, "secteur": "Cuisine", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 180, "nom": "Rhoner Pascal", "org": "Entremont cuisines sa", "tel": "079 665  33 83", "tel2": "027 785 14 72 ::: +41 27 785 20 05", "email": "", "hasEmail": false, "secteur": "Cuisine", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 181, "nom": "Richard JACQUIER", "org": "", "tel": "0796291439", "tel2": "", "email": "richardj.sarl@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 182, "nom": "Riwa Design", "org": "", "tel": "+41 62 398 17 70", "tel2": "", "email": "info@riwadesign.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 183, "nom": "Robert Beck", "org": "Grischa Haustechnik GmbH/Lacoon AG", "tel": "+41 79 969 74 82", "tel2": "", "email": "", "hasEmail": false, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 184, "nom": "Roberta Minoggio", "org": "BAZZI SA", "tel": "091 792 16 02", "tel2": "+41 79 961 03 82", "email": "info@bazzi.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 185, "nom": "Rolf Bucher", "org": "Odermatt Cheminéebau GmbH", "tel": "+41326454010", "tel2": "", "email": "mail@odermatt-ofenbau.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 186, "nom": "Rolf Herger", "org": "Rh raumplan et Herger Küchen AG", "tel": "+41 78 665 51 59", "tel2": "", "email": "r.herger@datazug.ch", "hasEmail": true, "secteur": "Cuisine", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 187, "nom": "Rüegg AG", "org": "", "tel": "+41 44 919 82 34", "tel2": "", "email": "info@ch.ruegg-cheminee.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 188, "nom": "Rüegg AG", "org": "", "tel": "+41 44 919 82 34", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 189, "nom": "Rüegg Mirco CNC Fils", "org": "Rüegg Innenausbau AG", "tel": "+41552841261", "tel2": "+41 79 781 76 60", "email": "mirco@schreiner-profi.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 190, "nom": "Rüegg Pinker", "org": "SP", "tel": "+41 44 919 82 32", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 191, "nom": "Rüegg Pinker", "org": "SP", "tel": "+41 44 919 82 32", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 192, "nom": "Sandro Thöny. TU", "org": "THÖNY + THÖNY GmbH", "tel": "+41792162093", "tel2": "+41 81 328 11 82", "email": "info@tt-ofen.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 193, "nom": "Sandy Sàrl", "org": "", "tel": "+41 32 426 70 72", "tel2": "+41 78 627 06 46", "email": "info@sandyvoirolcarrelage.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 194, "nom": "Scheuss GmbH", "org": "", "tel": "071 790 00 18", "tel2": "", "email": "info@scheussofenbau.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 195, "nom": "Schreinerei AG", "org": "", "tel": "+41523642041", "tel2": "+41523643817", "email": "Bruggmann-ag@gmx.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 196, "nom": "Schreinerei Fischer", "org": "", "tel": "071 298 32 22", "tel2": "", "email": "georgfischer1@bluewin.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 197, "nom": "segniore Davide TU", "org": "SeeweRCF Camini SA", "tel": "+41 91 840 15 50", "tel2": "+41 79 685 13 38", "email": "info@progettocamino.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 198, "nom": "Sfs Unimarket Pcad", "org": "", "tel": "071 727 58 23", "tel2": "", "email": "alam@sfsunimarket.biz", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 199, "nom": "Sfs Unimarket Pcad", "org": "", "tel": "071 727 58 23", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 200, "nom": "Silvia Queiroga", "org": "Vauthier SA.", "tel": "+41 32 843 02 20", "tel2": "+41 32 843 02 21", "email": "squeiroga@vauthier.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 201, "nom": "Staffelbach", "org": "", "tel": "+41 79 786 28 94", "tel2": "+41 41 979 17 22", "email": "info@schreinereistaffelbach.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 202, "nom": "Stefan Hobi", "org": "", "tel": "+41 799125667 ::: +41798403454", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 203, "nom": "Stefan Karlen Schreinerei Gätzi", "org": "", "tel": "+41 799350010", "tel2": "", "email": "", "hasEmail": false, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 204, "nom": "Stefan KASSLER", "org": "Alpinofen AG", "tel": "+41 31 992 13 13", "tel2": "+41 21 965 13 65", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 205, "nom": "Swisskeramik AG", "org": "", "tel": "+41416603367", "tel2": "", "email": "info@swisskeramik.ch", "hasEmail": true, "secteur": "Carrelage", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 206, "nom": "TARAMARCAZ ALAIN SÀRL", "org": "", "tel": "+4179 256 14 91", "tel2": "+41 27 785 20 24", "email": "taramarcazetfils@netplus.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 207, "nom": "Tarcisi SA", "org": "", "tel": "+41 81 920 23 38", "tel2": "", "email": "rene.frei@maissen-sa.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 208, "nom": "Tema José", "org": "", "tel": "+41 32 926 26 30", "tel2": "+41788179157", "email": "dep.sanitaire@groupeserena.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 209, "nom": "Thomas RIEDEL", "org": "", "tel": "+41 79 935 23 87", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 210, "nom": "Thüler Martin", "org": "", "tel": "+41 79 285 05 60", "tel2": "", "email": "martin.thueler@gmail.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 211, "nom": "Thüler Martin", "org": "", "tel": "+41 79 285 05 60", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 212, "nom": "Tobler Haustechnik + Metallbau AG", "org": "Trimble", "tel": "+41719991470", "tel2": "", "email": "", "hasEmail": false, "secteur": "Sanitaire", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 213, "nom": "Toni Braun", "org": "Plattli Ganz Baumaterial Pcad", "tel": "+41 79 608 15 89", "tel2": "+41 71 282 85 32", "email": "t.braun@pgb.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 214, "nom": "Tonwerk AG", "org": "", "tel": "+41 (0) 61 963 10 21", "tel2": "+41 (0) 61 9631020", "email": "w.thommen@tonwerk-ag.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 215, "nom": "Trinatura GmbH", "org": "", "tel": "+41 41 928 14 24", "tel2": "", "email": "info@trinatura.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 216, "nom": "Trinatura GmbH", "org": "", "tel": "+41 41 928 14 24", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 217, "nom": "Tristan Imgrüth", "org": "Trinatura GmbH", "tel": "+41 41 928 14 24", "tel2": "+41 79 522 84 84", "email": "tristanimgrueth@hotmail.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 218, "nom": "TSCHENETT Cheminée & Plattenbeläge Mirco Tschenett Inhaber", "org": "Sp", "tel": "+41818585600", "tel2": "+41 79 669 34 70", "email": "info@ofen-platten.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 219, "nom": "Ulrich Heggenberger", "org": "Bauzentrum Nordwestschweiz Heggenberger", "tel": "+41 79 479 08 45", "tel2": "+41786016974", "email": "heggenberger@bznw.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 220, "nom": "Urban Lötscher", "org": "Schreinerei Ruffieux AG", "tel": "079 604 00 57", "tel2": "+41 26 419 22 49", "email": "info@schreinerei-ruffieux.ch", "hasEmail": true, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 221, "nom": "Urs Buschor", "org": "Buschor wärme & feuer ag", "tel": "+41 71 722 15 15", "tel2": "", "email": "buschor@buschor-waermefeuer.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 222, "nom": "Urs Buschor", "org": "Buschor wärme & feuer ag", "tel": "+41 71 722 15 15", "tel2": "", "email": "buschor@buschor-waermefeuer.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 223, "nom": "Urs Grieder", "org": "", "tel": "+41 79 215 45 49", "tel2": "", "email": "info@grieder-hafner.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 224, "nom": "Urs Zurbuchen", "org": "", "tel": "+41 33 822 79 84", "tel2": "", "email": "info@zurbuchen-unterseen.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 225, "nom": "Vincent PUGIN", "org": "", "tel": "+41 79 748 85 67", "tel2": "", "email": "vincent-p@romandie.com", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 226, "nom": "VINZENZ HERZOG  à la retraite depuis 2024", "org": "Vinzenz Herzog AG", "tel": "0041 62 871 11 39", "tel2": "0041 62 871 32 86", "email": "v.herzog@vinzenz-herzog.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 227, "nom": "Vinzenz Jud", "org": "Vinzenz Jud", "tel": "+41 55 283 27 23", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 228, "nom": "Voutaz Mathieux. TU", "org": "VOUTAZ-MÉTRAILLER", "tel": "+41 79 766 34 43", "tel2": "+41 27 785 17 70", "email": "info@voutaz-metrailler.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 229, "nom": "Walter Andermatt", "org": "", "tel": "+41 79 641 27 75", "tel2": "+41 41 763 60 90", "email": "info@anag-baar.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 230, "nom": "Werner AG", "org": "", "tel": "079 204 32 03", "tel2": "", "email": "w.truffer@bluewin.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 231, "nom": "Widmer Ladenbau Start", "org": "", "tel": "+41 767322211", "tel2": "", "email": "", "hasEmail": false, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 232, "nom": "Wjatscheslaw Müller.", "org": "Sanigros AG", "tel": "+41799494437", "tel2": "+41 55 462 27 00", "email": "w.mueller@badmoebelxxl.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 233, "nom": "WTR AG", "org": "", "tel": "+41 41 930 20 60", "tel2": "+41799626273", "email": "info@wtr-online.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 234, "nom": "Yvan Clisson", "org": "", "tel": "+41 786000006", "tel2": "+41 79 290 45 20", "email": "info@clisson.ch", "hasEmail": true, "secteur": "Autre", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"id": 235, "nom": "Zurag Ag . Bundle Holz", "org": "", "tel": "+41 414440434", "tel2": "", "email": "", "hasEmail": false, "secteur": "Menuiserie", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "", "palettecad": true}, {"nom": "Good Cheminées", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "Vaud", "palettecad": false, "id": 236}, {"nom": "Art et Feu", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "", "canton": "Vaud", "palettecad": false, "id": 237}, {"nom": "Carron-Lugon (L'Architecte du Feu)", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: carronlugon.ch — Showrooms Etoy (VD) et Fully (VS)", "canton": "Vaud", "palettecad": false, "id": 238}, {"nom": "Figuet Technique", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: figuet-technique.ch — 350m² showroom", "canton": "Vaud", "palettecad": false, "id": 239}, {"nom": "Wit SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: wit-sa.ch — 1200m² showroom cheminées + sdb", "canton": "Vaud", "palettecad": false, "id": 240}, {"nom": "Fortunato Cheminée", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: fortunatocheminee.ch — Bussigny", "canton": "Vaud", "palettecad": false, "id": 241}, {"nom": "Eric Marchon SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: cheminee-marchon.ch — Villars-Ste-Croix", "canton": "Vaud", "palettecad": false, "id": 242}, {"nom": "Gomes Sàrl", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: gomes-sarl.ch — Fumiste Vaud", "canton": "Vaud", "palettecad": false, "id": 243}, {"nom": "Apothéloz Cheminées SA", "org": "", "tel": "+4122 792 20 10", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: apotheloz.ch — Satigny, GE+Vaud", "canton": "Genève", "palettecad": false, "id": 244}, {"nom": "Cheminées Création", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: cheminees-creation.ch — Romande, depuis 1972", "canton": "Vaud", "palettecad": false, "id": 245}, {"nom": "Micheli SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: micheli-sa.ch — Cheminées design, showroom Genève", "canton": "Genève", "palettecad": false, "id": 246}, {"nom": "Secuflamme", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: secuflamme.ch — Genève, depuis 1998", "canton": "Genève", "palettecad": false, "id": 247}, {"nom": "Serafim Melro", "org": "", "tel": "079 744 51 89", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: melro.ch — Genève", "canton": "Genève", "palettecad": false, "id": 248}, {"nom": "Sambiagio Style SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: sambiagio-style.ch — Genève, cheminées + spa", "canton": "Genève", "palettecad": false, "id": 249}, {"nom": "Cheminées du Valais", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: chemineesduvalais.ch — 3 showrooms: Conthey, Granges, Martigny", "canton": "Valais", "palettecad": false, "id": 250}, {"nom": "FISA SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: fisa-sa.ch — Valais", "canton": "Valais", "palettecad": false, "id": 251}, {"nom": "Aquafire", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: aquafire-vs.ch — Saxon VS, 300m² showroom", "canton": "Valais", "palettecad": false, "id": 252}, {"nom": "AS Concept Sàrl", "org": "", "tel": "", "tel2": "", "email": "info@asconcept.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "Site: asconcept.ch — Martigny VS", "canton": "Valais", "palettecad": false, "id": 253}, {"nom": "RC Cheminées", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: rccheminees.ch — Sion, showroom", "canton": "Valais", "palettecad": false, "id": 254}, {"nom": "Pierre & Feu Sàrl", "org": "", "tel": "", "tel2": "", "email": "info@pierre-et-feu.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "Site: pierre-et-feu.ch — Valais, 30 ans exp.", "canton": "Valais", "palettecad": false, "id": 255}, {"nom": "Caït SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: caitsa.ch — Troistorrents VS, pierre ollaire", "canton": "Valais", "palettecad": false, "id": 256}, {"nom": "Cheminée Leroi", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: chemineeleroi.ch — Marin-Epagnier NE, depuis 1989", "canton": "Neuchâtel", "palettecad": false, "id": 257}, {"nom": "Au Feu de Bois NE", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: aufeudebois-ne.ch — Neuchâtel", "canton": "Neuchâtel", "palettecad": false, "id": 258}, {"nom": "MVT SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: mvtsa.ch — La Chaux-de-Fonds, showroom", "canton": "Neuchâtel", "palettecad": false, "id": 259}, {"nom": "Numa Favre Tubage SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: numafavre-tubage.ch — Cornaux NE", "canton": "Neuchâtel", "palettecad": false, "id": 260}, {"nom": "Art-Tisons", "org": "", "tel": "", "tel2": "", "email": "info@art-tisons.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "Site: art-tisons.ch — Neuchâtel, cheminées sur mesure", "canton": "Neuchâtel", "palettecad": false, "id": 261}, {"nom": "Helfer Cheminées", "org": "", "tel": "079 417 63 55", "tel2": "", "email": "pierre.helfer@bluewin.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: helfer.ch — Romont FR, +160 ans", "canton": "Fribourg", "palettecad": false, "id": 262}, {"nom": "Bullag SA (Au Feu de Bois)", "org": "", "tel": "026 919 61 51", "tel2": "", "email": "info@bullag.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: bullag.ch — Gumefens FR, showroom", "canton": "Fribourg", "palettecad": false, "id": 263}, {"nom": "Conception'Flamm", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: conceptionflamm.ch — Delémont JU", "canton": "Jura", "palettecad": false, "id": 264}, {"nom": "Cuttat SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: cuttat-sa.ch — Courrendlin JU, +25 ans", "canton": "Jura", "palettecad": false, "id": 265}, {"nom": "Althaus Hervé Sàrl", "org": "", "tel": "032 475 61 82", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: althaussarl.ch — Buix JU, showroom, distributeur exclusif", "canton": "Jura", "palettecad": false, "id": 266}, {"nom": "Obrist Cheminée", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: obrist-cheminee.ch — Romande, depuis 1956", "canton": "Multi-cantons", "palettecad": false, "id": 267}, {"nom": "Gaznox SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: gaznox-cheminee-tubage.ch — VD/GE/VS/NE/JU", "canton": "Multi-cantons", "palettecad": false, "id": 268}, {"nom": "Sambiagio Style SA", "org": "", "tel": "", "tel2": "", "email": "", "hasEmail": false, "secteur": "Cheminée", "statut": "Mail à envoyer", "dateEnvoi": "", "notes": "Site: sambiagio-style.ch", "canton": "Neuchâtel", "palettecad": false, "id": 269}, {"id": 270, "nom": "Martignoni Cheminées", "org": "", "tel": "", "tel2": "", "email": "martignonicheminees@gmail.com", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "", "canton": "Valais", "palettecad": false}, {"id": 271, "nom": "Muller cheminées", "org": "", "tel": "", "tel2": "", "email": "info@muller-cheminees.com", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "", "canton": "", "palettecad": false}, {"id": 272, "nom": "Carron-Lugon", "org": "", "tel": "", "tel2": "", "email": "conseil@carronlugon.ch", "hasEmail": true, "secteur": "Cheminée", "statut": "Mail envoyé", "dateEnvoi": "2026-05-05", "notes": "", "canton": "Vaud", "palettecad": false}];
+
+let data = [];
+let sortCol = 'nom';
+let sortAsc = true;
+let deleteId = null;
+let saveTimer = null;
+
+// ---- GOOGLE DRIVE INIT ----
+function gapiLoaded() {
+  gapi.load('client', async () => {
+    await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
+    gapiInited = true;
+    maybeEnableDrive();
+  });
+}
+
+function gisLoaded() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { setIndicator('● Erreur Drive', false); return; }
+      driveConnected = true;
+      document.getElementById('driveBtn').textContent = '✓ Drive connecté';
+      document.getElementById('driveBtn').style.background = 'rgba(134,239,172,.25)';
+      await loadFromDrive();
+    }
+  });
+  gisInited = true;
+  maybeEnableDrive();
+}
+
+function maybeEnableDrive() {
+  if (gapiInited && gisInited) {
+    document.getElementById('driveBtn').disabled = false;
+  }
+}
+
+function driveConnect() {
+  if (!gapiInited || !gisInited) { alert('API Google pas encore chargée, patientez.'); return; }
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+async function findDriveFile() {
+  const res = await gapi.client.drive.files.list({
+    q: `name='${DRIVE_FILE_NAME}' and trashed=false`,
+    spaces: 'drive', fields: 'files(id,name)'
+  });
+  const files = res.result.files;
+  return files && files.length ? files[0].id : null;
+}
+
+async function loadFromDrive() {
+  setIndicator('● Chargement Drive...', false);
+  try {
+    driveFileId = await findDriveFile();
+    if (driveFileId) {
+      const res = await gapi.client.drive.files.get({ fileId: driveFileId, alt: 'media' });
+      data = JSON.parse(res.body);
+      setIndicator('● Drive chargé', true);
+    } else {
+      // Pas encore de fichier Drive — utiliser données locales
+      loadLocal();
+      setIndicator('● Drive prêt (nouveau fichier)', true);
+    }
+  } catch(e) {
+    loadLocal();
+    setIndicator('● Erreur Drive, données locales', false);
+  }
+  applyFilters();
+}
+
+async function saveToDrive() {
+  const json = JSON.stringify(data);
+  const blob = new Blob([json], { type: 'application/json' });
+  if (driveFileId) {
+    await gapi.client.request({
+      path: `/upload/drive/v3/files/${driveFileId}`,
+      method: 'PATCH',
+      params: { uploadType: 'media' },
+      body: json
+    });
+  } else {
+    const meta = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+    form.append('file', blob);
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + gapi.client.getToken().access_token },
+      body: form
+    });
+    const d = await res.json();
+    driveFileId = d.id;
+  }
+  // Aussi en local comme backup
+  localStorage.setItem(STORAGE_KEY, json);
+  setIndicator('● Sauvegardé', true);
+}
+
+function setIndicator(msg, ok) {
+  const ind = document.getElementById('saveIndicator');
+  ind.textContent = msg;
+  ind.className = 'save-indicator' + (ok ? ' saved' : '');
+}
+
+// ---- INIT LOCAL (fallback) ----
+function loadLocal() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try { data = JSON.parse(saved); } catch(e) { data = INIT_DATA.slice(); }
+  } else {
+    data = INIT_DATA.slice();
+  }
+}
+
+function init() {
+  loadLocal();
+  applyFilters();
+  setIndicator('● Local (connectez Drive)', false);
+  // Auto-init GAPI
+  if (typeof gapi !== 'undefined') gapiLoaded();
+  if (typeof google !== 'undefined' && google.accounts) gisLoaded();
+}
+
+function save() {
+  if (driveConnected) {
+    saveToDrive().catch(() => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      setIndicator('● Sauvegardé localement', true);
+    });
+  } else {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    setIndicator('● Sauvegardé localement', true);
+  }
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 800);
+  setIndicator('● En cours...', false);
+}
+
+// STATUT CLASS
+function statutClass(s) {
+  const m = {
+    'Mail à envoyer':'st-mail-envoyer',
+    'Mail envoyé':'st-mail-envoye',
+    'Réponse reçue':'st-reponse',
+    'Intéressé':'st-interesse',
+    'À relancer':'st-relancer',
+    'Pas intéressé':'st-pas-interesse',
+    'Exclu':'st-exclu'
+  };
+  return 'statut-sel ' + (m[s] || 'st-mail-envoyer');
+}
+
+// RENDER
+function render(list) {
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('emptyMsg');
+  const count = document.getElementById('countBadge');
+
+  count.textContent = list.length + ' contact' + (list.length > 1 ? 's' : '');
+
+  if (!list.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('statsBar').innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = list.map(c => `
+    <tr class="${c.statut === 'Exclu' ? 'exclu' : ''}">
+      <td class="nom-cell">
+        <div class="nom">${c.nom || c.org}</div>
+        ${c.org && c.org !== c.nom ? `<div class="org">${c.org}</div>` : ''}
+      </td>
+      <td><span class="badge badge-${c.secteur}">${c.secteur}</span></td>
+      <td class="tel-cell">
+        ${c.tel ? `<a href="tel:${c.tel}">${c.tel}</a>` : '<span style="color:#d1d5db">—</span>'}
+        ${c.tel2 ? `<div class="tel2">${c.tel2}</div>` : ''}
+      </td>
+      <td class="email-cell">
+        ${c.email ? `<a href="mailto:${c.email}" title="${c.email}">${c.email.length > 22 ? c.email.substring(0,22)+'…' : c.email}</a>` : '<span class="no-email">—</span>'}
+      </td>
+      <td style="font-size:11px;color:#6b7280;">${c.canton || '—'}</td>
+      <td style="text-align:center">
+        <input type="checkbox" class="check-email" ${c.hasEmail ? 'checked' : ''} onchange="toggleEmail(${c.id}, this.checked)">
+      </td>
+      <td style="text-align:center">
+        <input type="checkbox" class="check-pcad" ${c.palettecad ? 'checked' : ''} onchange="togglePcad(${c.id}, this.checked)" title="Client PaletteCAD">
+      </td>
+      <td>
+        <select class="${statutClass(c.statut)}" onchange="updateStatut(${c.id}, this)">
+          <option ${c.statut=='Mail à envoyer'?'selected':''}>Mail à envoyer</option>
+          <option ${c.statut=='Mail envoyé'?'selected':''}>Mail envoyé</option>
+          <option ${c.statut=='Réponse reçue'?'selected':''}>Réponse reçue</option>
+          <option ${c.statut=='Intéressé'?'selected':''}>Intéressé</option>
+          <option ${c.statut=='À relancer'?'selected':''}>À relancer</option>
+          <option ${c.statut=='Pas intéressé'?'selected':''}>Pas intéressé</option>
+          <option ${c.statut=='Exclu'?'selected':''}>Exclu</option>
+        </select>
+      </td>
+      <td>
+        <input type="date" class="date-input" value="${c.dateEnvoi || ''}" onchange="updateDate(${c.id}, this.value)">
+      </td>
+      <td>
+        <input type="text" class="notes-input" placeholder="Notes…" value="${c.notes || ''}" onchange="updateNotes(${c.id}, this.value)">
+      </td>
+      <td>
+        <button class="btn-del" onclick="askDelete(${c.id})" title="Supprimer">✕</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Stats
+  const byStatut = {};
+  list.forEach(c => { byStatut[c.statut] = (byStatut[c.statut]||0)+1; });
+  const colors = {
+    'Mail à envoyer':'#fbbf24','Mail envoyé':'#60a5fa',
+    'Réponse reçue':'#34d399','Intéressé':'#10b981',
+    'À relancer':'#f87171','Pas intéressé':'#d1d5db','Exclu':'#9ca3af'
+  };
+  document.getElementById('statsBar').innerHTML =
+    Object.entries(byStatut).map(([s,n]) =>
+      `<div class="stat-item"><div class="stat-dot" style="background:${colors[s]||'#999'}"></div>${s}: <b>${n}</b></div>`
+    ).join('') +
+    `<div class="stat-item" style="margin-left:auto"><div class="stat-dot" style="background:#1A3A6B"></div>Avec email: <b>${list.filter(c=>c.hasEmail).length}</b></div>`;
+}
+
+// FILTERS
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const sec = document.getElementById('fSecteur').value;
+  const sta = document.getElementById('fStatut').value;
+  const em = document.getElementById('fEmail').value;
+  const can = document.getElementById('fCanton').value;
+  const pcad = document.getElementById('fPcad').value;
+
+  let list = data.filter(c => {
+    const text = (c.nom+' '+c.org+' '+(c.canton||'')+' '+c.tel+' '+c.email).toLowerCase();
+    return (!q || text.includes(q))
+      && (!sec || c.secteur === sec)
+      && (!sta || c.statut === sta)
+      && (em === '' || (em === '1' ? c.hasEmail : !c.hasEmail))
+      && (!can || c.canton === can)
+      && (pcad === '' || (pcad === '1' ? c.palettecad : !c.palettecad));
+  });
+
+  list.sort((a,b) => {
+    const av = (a[sortCol]||'').toLowerCase();
+    const bv = (b[sortCol]||'').toLowerCase();
+    return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+
+  render(list);
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  applyFilters();
+}
+
+// UPDATES
+function updateStatut(id, sel) {
+  const c = data.find(x => x.id === id);
+  if (c) { c.statut = sel.value; sel.className = statutClass(sel.value); scheduleSave(); applyFilters(); }
+}
+
+function updateDate(id, val) {
+  const c = data.find(x => x.id === id);
+  if (c) { c.dateEnvoi = val; scheduleSave(); }
+}
+
+function updateNotes(id, val) {
+  const c = data.find(x => x.id === id);
+  if (c) { c.notes = val; scheduleSave(); }
+}
+
+function toggleEmail(id, checked) {
+  const c = data.find(x => x.id === id);
+  if (c) { c.hasEmail = checked; scheduleSave(); applyFilters(); }
+}
+
+function togglePcad(id, checked) {
+  const c = data.find(x => x.id === id);
+  if (c) { c.palettecad = checked; scheduleSave(); applyFilters(); }
+}
+
+// DELETE
+function askDelete(id) {
+  deleteId = id;
+  const c = data.find(x => x.id === id);
+  document.getElementById('delModalName').textContent =
+    `Voulez-vous supprimer "${c.nom || c.org}" ? Cette action est irréversible.`;
+  document.getElementById('delModal').classList.add('show');
+}
+
+function confirmDelete() {
+  data = data.filter(x => x.id !== deleteId);
+  closeModal('delModal');
+  scheduleSave();
+  applyFilters();
+}
+
+// ADD
+function openAddModal() {
+  document.getElementById('addNom').value = '';
+  document.getElementById('addOrg').value = '';
+  document.getElementById('addTel').value = '';
+  document.getElementById('addEmail').value = '';
+  document.getElementById('addCanton').value = '';
+  document.getElementById('addPcad').checked = false;
+  document.getElementById('addModal').classList.add('show');
+}
+
+function confirmAdd() {
+  const nom = document.getElementById('addNom').value.trim();
+  const org = document.getElementById('addOrg').value.trim();
+  const tel = document.getElementById('addTel').value.trim();
+  const email = document.getElementById('addEmail').value.trim();
+  const secteur = document.getElementById('addSecteur').value;
+  const canton = document.getElementById('addCanton').value;
+  const palettecad = document.getElementById('addPcad').checked;
+
+  if (!nom && !org) { alert('Merci de saisir au moins un nom ou une société.'); return; }
+
+  const newId = data.length ? Math.max(...data.map(x=>x.id)) + 1 : 0;
+  data.push({
+    id: newId,
+    nom: nom || org,
+    org: org,
+    tel: tel,
+    tel2: '',
+    email: email,
+    hasEmail: email.includes('@'),
+    secteur: secteur,
+    canton: canton,
+    palettecad: palettecad,
+    statut: 'Mail à envoyer',
+    dateEnvoi: '',
+    notes: ''
+  });
+
+  closeModal('addModal');
+  scheduleSave();
+  applyFilters();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// EXPORT
+function exportCSV() {
+  const rows = [['Nom','Organisation','Téléphone','Email','A un email','Secteur','Canton','Client PaletteCAD','Statut','Date envoi','Notes']];
+  data.forEach(c => rows.push([c.nom,c.org,c.tel,c.email,c.hasEmail?'Oui':'Non',c.secteur,c.canton||'',c.palettecad?'Oui':'Non',c.statut,c.dateEnvoi,c.notes]));
+  const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF'+csv);
+  a.download = 'CRM_KND_export.csv';
+  a.click();
+}
+
+// Fermer modal en cliquant dehors
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('show'); });
+});
+
+init();
+</script>
+</body>
+</html>
