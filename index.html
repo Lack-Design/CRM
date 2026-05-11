@@ -446,8 +446,11 @@ function render(list) {
         ${c.tel ? `<a href="tel:${c.tel}">${c.tel}</a>` : '<span style="color:#d1d5db">—</span>'}
         ${c.tel2 ? `<div class="tel2">${c.tel2}</div>` : ''}
       </td>
-      <td class="email-cell">
-        ${c.email ? `<a href="mailto:${c.email}" title="${c.email}">${c.email.length > 22 ? c.email.substring(0,22)+'…' : c.email}</a>` : '<span class="no-email">—</span>'}
+      <td class="email-cell" style="display:flex;align-items:center;gap:4px;">
+        <span id="email-display-${c.id}">
+          ${c.email ? `<a href="mailto:${c.email}" title="${c.email}">${c.email.length > 22 ? c.email.substring(0,22)+'…' : c.email}</a>` : '<span class="no-email">—</span>'}
+        </span>
+        <button onclick="editEmail(${c.id})" title="Modifier l'email" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:11px;padding:1px 3px;flex-shrink:0;" onmouseover="this.style.color='#1A3A6B'" onmouseout="this.style.color='#9ca3af'">✎</button>
       </td>
       <td style="font-size:11px;color:#6b7280;">${c.canton || '—'}</td>
       <td style="text-align:center">
@@ -627,6 +630,36 @@ function exportCSV() {
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF'+csv);
   a.download = 'CRM_KND_export.csv';
   a.click();
+}
+
+// EDIT EMAIL INLINE
+function editEmail(id) {
+  const c = data.find(x => x.id === id);
+  if (!c) return;
+  const span = document.getElementById('email-display-' + id);
+  if (!span) return;
+  const current = c.email || '';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = current;
+  input.style.cssText = 'width:160px;padding:3px 6px;border:1px solid #1A3A6B;border-radius:4px;font-size:11px;outline:none;';
+  input.placeholder = 'email@société.ch';
+  span.innerHTML = '';
+  span.appendChild(input);
+  input.focus();
+  input.select();
+  function save() {
+    const val = input.value.trim();
+    c.email = val;
+    c.hasEmail = val.includes('@');
+    scheduleSave();
+    applyFilters();
+  }
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { input.blur(); }
+    if (e.key === 'Escape') { c.email = current; applyFilters(); }
+  });
 }
 
 // Fermer modal en cliquant dehors
