@@ -109,8 +109,8 @@
   .check-pcad { width:15px; height:15px; cursor:pointer; accent-color:#0369a1; }
 </style>
 <!-- Google API -->
-<script src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-<script src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 </head>
 <body>
 
@@ -384,10 +384,22 @@ function init() {
   loadLocal();
   applyFilters();
   setIndicator('● Local (connectez Drive)', false);
-  // Auto-init GAPI
-  if (typeof gapi !== 'undefined') gapiLoaded();
-  if (typeof google !== 'undefined' && google.accounts) gisLoaded();
 }
+
+// Initialiser Google APIs après chargement complet de la page
+window.addEventListener('load', function() {
+  if (typeof gapi !== 'undefined') {
+    gapiLoaded();
+  }
+  if (typeof google !== 'undefined' && google.accounts) {
+    gisLoaded();
+  }
+  // Réessayer après délai si pas encore chargé
+  setTimeout(function() {
+    if (!gapiInited && typeof gapi !== 'undefined') gapiLoaded();
+    if (!gisInited && typeof google !== 'undefined' && google.accounts) gisLoaded();
+  }, 2000);
+});
 
 function save() {
   if (driveConnected) {
