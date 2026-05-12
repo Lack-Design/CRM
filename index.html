@@ -695,82 +695,57 @@ function editEmail(id) {
 // IMPORT CONTACTS
 function importContacts(input) {
   const file = input.files[0];
-  if (!file) return;
+  if (!file) { alert('Aucun fichier sélectionné'); return; }
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onerror = function() { alert('Erreur lecture: ' + reader.error); };
+  reader.onload = function() {
     try {
-      let imported = [];
-      if (file.name.endsWith('.json')) {
-        imported = JSON.parse(e.target.result);
-      } else if (file.name.endsWith('.csv')) {
-        const lines = e.target.result.split('\n');
-        const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
-          // Parser CSV avec guillemets
-          const vals = [];
-          let cur = '', inQ = false;
-          for (let c of lines[i]) {
-            if (c === '"') inQ = !inQ;
-            else if (c === ',' && !inQ) { vals.push(cur); cur = ''; }
-            else cur += c;
-          }
-          vals.push(cur);
-          const obj = {};
-          headers.forEach((h, idx) => obj[h] = (vals[idx] || '').trim());
-          imported.push(obj);
+      const text = reader.result;
+      if (!text) { alert('Fichier vide'); return; }
+      const rawLines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l => l.trim());
+      if (rawLines.length < 2) { alert('CSV invalide'); return; }
+      function parseCSVLine(line) {
+        const result = []; let cur = '', inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+          else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+          else cur += ch;
         }
+        result.push(cur.trim()); return result;
       }
-
-      // Normaliser et fusionner
+      const headers = parseCSVLine(rawLines[0]).map(h => h.replace(/^"|"$/g,''));
       const existingEmails = new Set(data.map(c => (c.email||'').toLowerCase()).filter(Boolean));
       const existingNoms = new Set(data.map(c => (c.nom||'').toLowerCase()));
       let maxId = data.length ? Math.max(...data.map(c => c.id)) : 0;
       let added = 0, skipped = 0;
-
-      for (const row of imported) {
-        // Détecter format JSON (déjà structuré) ou CSV
-        const nom = row.nom || row.Nom || row.Entreprise || row.name || '';
-        const email = (row.email || row.Email || row['Emails trouvés'] || '').split('|')[0].trim();
-        const site = row.site || row.Site || row['Site web'] || '';
-        const ville = row.ville || row.Ville || row.Localité || '';
-        const secteur = row.secteur || row.Secteur || 'Sanitaire';
-        const canton = row.canton || row.Canton || '';
-
+      for (let i = 1; i < rawLines.length; i++) {
+        if (!rawLines[i].trim()) continue;
+        const vals = parseCSVLine(rawLines[i]);
+        const row = {};
+        headers.forEach((h, idx) => { row[h] = (vals[idx]||'').replace(/^"|"$/g,'').trim(); });
+        const nom = row['Nom']||row['nom']||row['Entreprise']||'';
+        const email = (row['Email']||row['email']||'').split('|')[0].trim();
+        const secteur = row['Secteur']||row['secteur']||'Sanitaire';
+        const canton = row['Canton']||row['canton']||'';
         if (!nom) continue;
         if (existingNoms.has(nom.toLowerCase())) { skipped++; continue; }
         if (email && existingEmails.has(email.toLowerCase())) { skipped++; continue; }
-
-        data.push({
-          id: ++maxId,
-          nom: nom,
-          org: row.org || row.Organisation || '',
-          tel: row.tel || row.Téléphone || '',
-          tel2: '',
-          email: email,
-          hasEmail: email.includes('@'),
-          secteur: secteur,
-          canton: canton,
-          palettecad: false,
-          statut: row.statut || row.Statut || 'Mail à envoyer',
-          dateEnvoi: row.dateEnvoi || row['Date envoi'] || '',
-          notes: row.notes || row.Notes || (site ? 'Site: ' + site + (ville ? ' | Ville: ' + ville : '') : ville ? 'Ville: ' + ville : ''),
-        });
+        data.push({ id: ++maxId, nom, org: row['Organisation']||'', tel: row['Téléphone']||'', tel2: '',
+          email, hasEmail: email.includes('@'), secteur, canton, palettecad: false,
+          statut: row['Statut']||'Mail à envoyer', dateEnvoi: row['Date envoi']||'',
+          notes: row['Notes']||'' });
         if (email) existingEmails.add(email.toLowerCase());
         existingNoms.add(nom.toLowerCase());
         added++;
       }
-
-      scheduleSave();
-      applyFilters();
+      scheduleSave(); applyFilters();
       document.getElementById('countBadge').textContent = data.length + ' contacts';
-      alert('Import terminé\n✓ ' + added + ' nouveaux contacts ajoutés\n✗ ' + skipped + ' doublons ignorés');
-    } catch(err) {
-      alert('Erreur import: ' + err.message);
-    }
+      alert('Import terminé !\n✓ ' + added + ' ajoutés\n✗ ' + skipped + ' doublons ignorés');
+    } catch(err) { alert('Erreur: ' + err.message); }
     input.value = '';
   };
-
+  reader.readAsText(file, 'UTF-8');
 }
 
 // Fermer modal en cliquant dehors
