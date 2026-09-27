@@ -205,6 +205,7 @@
       <th style="text-align:center" title="Client PaletteCAD">PCAD</th>
       <th onclick="sortBy('statut')">Statut ↕</th>
       <th>Date envoi</th>
+      <th>Campagne</th>
       <th>Notes</th>
       <th></th>
     </tr>
@@ -511,6 +512,11 @@ function render(list) {
       <td>
         <input type="date" class="date-input" value="${c.dateEnvoi || ''}" onchange="updateDate(${c.id}, this.value)">
       </td>
+      <td style="font-size:10px;color:#4b5563;max-width:170px;" title="${c.mailSujet || ''}">
+        ${c.mailCampagne
+          ? `<span class="badge badge-Autre">${c.mailCampagne}</span>${c.dateReponse ? `<div style="margin-top:3px;color:#059669;">Réponse : ${c.dateReponse}</div>` : ''}`
+          : '<span style="color:#d1d5db">—</span>'}
+      </td>
       <td>
         <input type="text" class="notes-input" placeholder="Notes…" value="${c.notes || ''}" onchange="updateNotes(${c.id}, this.value)">
       </td>
@@ -545,7 +551,7 @@ function applyFilters() {
   const pcad = document.getElementById('fPcad').value;
 
   let list = data.filter(c => {
-    const text = (c.nom+' '+c.org+' '+(c.canton||'')+' '+c.tel+' '+c.email).toLowerCase();
+    const text = (c.nom+' '+c.org+' '+(c.canton||'')+' '+c.tel+' '+c.email+' '+(c.mailCampagne||'')+' '+(c.mailSujet||'')).toLowerCase();
     return (!q || text.includes(q))
       && (!sec || c.secteur === sec)
       && (!sta || c.statut === sta)
@@ -652,6 +658,9 @@ function confirmAdd() {
     palettecad: palettecad,
     statut: 'Mail à envoyer',
     dateEnvoi: '',
+    mailCampagne: '',
+    mailSujet: '',
+    dateReponse: '',
     notes: ''
   });
 
@@ -666,8 +675,23 @@ function closeModal(id) {
 
 // EXPORT
 function exportCSV() {
-  const rows = [['Nom','Organisation','Téléphone','Email','A un email','Secteur','Canton','Client PaletteCAD','Statut','Date envoi','Notes']];
-  data.forEach(c => rows.push([c.nom,c.org,c.tel,c.email,c.hasEmail?'Oui':'Non',c.secteur,c.canton||'',c.palettecad?'Oui':'Non',c.statut,c.dateEnvoi,c.notes]));
+  const rows = [['Nom','Organisation','Téléphone','Email','A un email','Secteur','Canton','Client PaletteCAD','Statut','Date envoi','Campagne','Sujet du mail','Date réponse','Notes']];
+  data.forEach(c => rows.push([
+    c.nom,
+    c.org,
+    c.tel,
+    c.email,
+    c.hasEmail?'Oui':'Non',
+    c.secteur,
+    c.canton||'',
+    c.palettecad?'Oui':'Non',
+    c.statut,
+    c.dateEnvoi,
+    c.mailCampagne||'',
+    c.mailSujet||'',
+    c.dateReponse||'',
+    c.notes
+  ]));
   const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF'+csv);
