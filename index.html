@@ -196,6 +196,12 @@
     <option value="__NONE__">Sans campagne</option>
     <option value="__ANY__">Avec une campagne</option>
   </select>
+  <select id="fContacte" onchange="applyFilters()" title="Historique de prospection">
+    <option value="">Tous contacts</option>
+    <option value="0">Jamais contacté</option>
+    <option value="1">Déjà contacté</option>
+  </select>
+  <button class="btn btn-primary" onclick="presetCampagne()" title="Avec email, non désabonné, jamais contacté, sans campagne, Mail à envoyer" style="padding:4px 10px;font-size:11px;">Prêts campagne</button>
   <button class="btn btn-secondary" onclick="resetFilters()" style="padding:4px 10px;font-size:11px;">↺ Filtres</button>
   <button class="btn btn-success" onclick="openAddModal()">+ Ajouter</button>
   <button class="btn" onclick="document.getElementById('importFile').click()" style="background:#6366f1;color:#fff;padding:4px 10px;font-size:11px;">⬆ Importer</button>
@@ -596,7 +602,11 @@ function render(list) {
   const empty = document.getElementById('emptyMsg');
   const count = document.getElementById('countBadge');
 
-  count.textContent = list.length + ' contact' + (list.length > 1 ? 's' : '');
+  const filtered = list.length;
+  const total = data.length;
+  count.textContent = filtered === total
+    ? total + ' contact' + (total > 1 ? 's' : '')
+    : filtered + ' / ' + total + ' contacts';
 
   if (!list.length) {
     tbody.innerHTML = '';
@@ -712,10 +722,20 @@ function refreshCampaignFilter() {
 }
 
 function resetFilters() {
-  ['search','fSecteur','fStatut','fEmail','fCanton','fPcad','fDesabo','fCampagne'].forEach(id => {
+  ['search','fSecteur','fStatut','fEmail','fCanton','fPcad','fDesabo','fCampagne','fContacte'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  applyFilters();
+}
+
+function presetCampagne() {
+  resetFilters();
+  document.getElementById('fStatut').value = 'Mail à envoyer';
+  document.getElementById('fEmail').value = '1';
+  document.getElementById('fDesabo').value = '0';
+  document.getElementById('fCampagne').value = '__NONE__';
+  document.getElementById('fContacte').value = '0';
   applyFilters();
 }
 
@@ -730,11 +750,19 @@ function applyFilters() {
   const pcad = document.getElementById('fPcad').value;
   const desabo = document.getElementById('fDesabo').value;
   const campagne = document.getElementById('fCampagne').value;
+  const contacte = document.getElementById('fContacte').value;
 
   let list = data.filter(c => {
     const text = (c.nom+' '+c.org+' '+(c.canton||'')+' '+c.tel+' '+c.email+' '+(c.mailCampagne||'')+' '+(c.mailSujet||'')).toLowerCase();
     const isUnsubscribed = c.nePlusContacter === true || c.statut === 'Désabonné';
     const campaignName = (c.mailCampagne || '').trim();
+
+    // "Déjà contacté" = preuve objective d'un envoi/campagne
+    // ou statut indiquant qu'un échange commercial a déjà eu lieu.
+    const wasContacted =
+      !!(c.dateEnvoi || '').trim() ||
+      !!campaignName ||
+      ['Mail envoyé','Réponse reçue','Intéressé','À relancer','Pas intéressé','Désabonné'].includes(c.statut);
 
     const campaignMatch =
       campagne === '' ||
@@ -749,6 +777,7 @@ function applyFilters() {
       && (!can || c.canton === can)
       && (pcad === '' || (pcad === '1' ? c.palettecad : !c.palettecad))
       && (desabo === '' || (desabo === '1' ? isUnsubscribed : !isUnsubscribed))
+      && (contacte === '' || (contacte === '1' ? wasContacted : !wasContacted))
       && campaignMatch;
   });
 
