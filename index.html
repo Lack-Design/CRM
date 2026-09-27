@@ -182,10 +182,21 @@
     <option>Multi-cantons</option>
   </select>
   <select id="fPcad" onchange="applyFilters()">
-    <option value="">Tous</option>
+    <option value="">Tous PCAD</option>
     <option value="1">Client PaletteCAD</option>
     <option value="0">Non PaletteCAD</option>
   </select>
+  <select id="fDesabo" onchange="applyFilters()" title="Filtrer les contacts désabonnés / ne plus contacter">
+    <option value="">Tous désabonnements</option>
+    <option value="1">Désabonnés / ne plus contacter</option>
+    <option value="0">Non désabonnés</option>
+  </select>
+  <select id="fCampagne" onchange="applyFilters()" title="Filtrer par campagne">
+    <option value="">Toutes campagnes</option>
+    <option value="__NONE__">Sans campagne</option>
+    <option value="__ANY__">Avec une campagne</option>
+  </select>
+  <button class="btn btn-secondary" onclick="resetFilters()" style="padding:4px 10px;font-size:11px;">↺ Filtres</button>
   <button class="btn btn-success" onclick="openAddModal()">+ Ajouter</button>
   <button class="btn" onclick="document.getElementById('importFile').click()" style="background:#6366f1;color:#fff;padding:4px 10px;font-size:11px;">⬆ Importer</button>
   <input type="file" id="importFile" accept=".json,.csv" style="display:none" onchange="importContacts(this)">
@@ -674,22 +685,63 @@ function render(list) {
 }
 
 // FILTERS
+function refreshCampaignFilter() {
+  const sel = document.getElementById('fCampagne');
+  if (!sel) return;
+  const current = sel.value;
+
+  const campaigns = [...new Set(
+    data.map(c => (c.mailCampagne || '').trim()).filter(Boolean)
+  )].sort((a,b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+
+  sel.innerHTML =
+    '<option value="">Toutes campagnes</option>' +
+    '<option value="__NONE__">Sans campagne</option>' +
+    '<option value="__ANY__">Avec une campagne</option>' +
+    campaigns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
+  if ([...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+function resetFilters() {
+  ['search','fSecteur','fStatut','fEmail','fCanton','fPcad','fDesabo','fCampagne'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  applyFilters();
+}
+
 function applyFilters() {
+  refreshCampaignFilter();
+
   const q = document.getElementById('search').value.toLowerCase();
   const sec = document.getElementById('fSecteur').value;
   const sta = document.getElementById('fStatut').value;
   const em = document.getElementById('fEmail').value;
   const can = document.getElementById('fCanton').value;
   const pcad = document.getElementById('fPcad').value;
+  const desabo = document.getElementById('fDesabo').value;
+  const campagne = document.getElementById('fCampagne').value;
 
   let list = data.filter(c => {
     const text = (c.nom+' '+c.org+' '+(c.canton||'')+' '+c.tel+' '+c.email+' '+(c.mailCampagne||'')+' '+(c.mailSujet||'')).toLowerCase();
+    const isUnsubscribed = c.nePlusContacter === true || c.statut === 'Désabonné';
+    const campaignName = (c.mailCampagne || '').trim();
+
+    const campaignMatch =
+      campagne === '' ||
+      (campagne === '__NONE__' && !campaignName) ||
+      (campagne === '__ANY__' && !!campaignName) ||
+      (campagne !== '__NONE__' && campagne !== '__ANY__' && campaignName === campagne);
+
     return (!q || text.includes(q))
       && (!sec || c.secteur === sec)
       && (!sta || c.statut === sta)
       && (em === '' || (em === '1' ? c.hasEmail : !c.hasEmail))
       && (!can || c.canton === can)
-      && (pcad === '' || (pcad === '1' ? c.palettecad : !c.palettecad));
+      && (pcad === '' || (pcad === '1' ? c.palettecad : !c.palettecad))
+      && (desabo === '' || (desabo === '1' ? isUnsubscribed : !isUnsubscribed))
+      && campaignMatch;
   });
 
   list.sort((a,b) => {
