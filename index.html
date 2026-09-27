@@ -77,6 +77,7 @@
   .st-relancer { border-color:#f87171; color:#991b1b; background:#fef2f2; }
   .st-pas-interesse { border-color:#d1d5db; color:#6b7280; background:#f9fafb; }
   .st-exclu { border-color:#6b7280; color:#374151; background:#f3f4f6; }
+  .st-desabonne { border-color:#111827; color:#111827; background:#e5e7eb; }
 
   /* DATE + NOTES */
   .date-input { padding:4px 6px; border:1px solid #e5e7eb; border-radius:4px; font-size:11px; width:100px; }
@@ -142,6 +143,7 @@
     <option>Intéressé</option>
     <option>À relancer</option>
     <option>Pas intéressé</option>
+    <option>Désabonné</option>
     <option>Exclu</option>
   </select>
   <select id="fEmail" onchange="applyFilters()">
@@ -449,6 +451,7 @@ function statutClass(s) {
     'Intéressé':'st-interesse',
     'À relancer':'st-relancer',
     'Pas intéressé':'st-pas-interesse',
+    'Désabonné':'st-desabonne',
     'Exclu':'st-exclu'
   };
   return 'statut-sel ' + (m[s] || 'st-mail-envoyer');
@@ -471,7 +474,7 @@ function render(list) {
   empty.style.display = 'none';
 
   tbody.innerHTML = list.map(c => `
-    <tr class="${c.statut === 'Exclu' ? 'exclu' : ''}">
+    <tr class="${(c.statut === 'Exclu' || c.statut === 'Désabonné') ? 'exclu' : ''}">
       <td class="nom-cell">
         <div class="nom">${c.nom || c.org}</div>
         ${c.org && c.org !== c.nom ? `<div class="org">${c.org}</div>` : ''}
@@ -506,6 +509,7 @@ function render(list) {
           <option ${c.statut=='Intéressé'?'selected':''}>Intéressé</option>
           <option ${c.statut=='À relancer'?'selected':''}>À relancer</option>
           <option ${c.statut=='Pas intéressé'?'selected':''}>Pas intéressé</option>
+          <option ${c.statut=='Désabonné'?'selected':''}>Désabonné</option>
           <option ${c.statut=='Exclu'?'selected':''}>Exclu</option>
         </select>
       </td>
@@ -532,7 +536,8 @@ function render(list) {
   const colors = {
     'Mail à envoyer':'#fbbf24','Mail envoyé':'#60a5fa',
     'Réponse reçue':'#34d399','Intéressé':'#10b981',
-    'À relancer':'#f87171','Pas intéressé':'#d1d5db','Exclu':'#9ca3af'
+    'À relancer':'#f87171','Pas intéressé':'#d1d5db',
+    'Désabonné':'#111827','Exclu':'#9ca3af'
   };
   document.getElementById('statsBar').innerHTML =
     Object.entries(byStatut).map(([s,n]) =>
@@ -661,6 +666,9 @@ function confirmAdd() {
     mailCampagne: '',
     mailSujet: '',
     dateReponse: '',
+    unsubscribeToken: '',
+    dateDesabonnement: '',
+    nePlusContacter: false,
     notes: ''
   });
 
@@ -675,7 +683,7 @@ function closeModal(id) {
 
 // EXPORT
 function exportCSV() {
-  const rows = [['Nom','Organisation','Téléphone','Email','A un email','Secteur','Canton','Client PaletteCAD','Statut','Date envoi','Campagne','Sujet du mail','Date réponse','Notes']];
+  const rows = [['Nom','Organisation','Téléphone','Email','A un email','Secteur','Canton','Client PaletteCAD','Statut','Date envoi','Campagne','Sujet du mail','Date réponse','Date désabonnement','Ne plus contacter','Notes']];
   data.forEach(c => rows.push([
     c.nom,
     c.org,
@@ -690,6 +698,8 @@ function exportCSV() {
     c.mailCampagne||'',
     c.mailSujet||'',
     c.dateReponse||'',
+    c.dateDesabonnement||'',
+    c.nePlusContacter?'Oui':'Non',
     c.notes
   ]));
   const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
@@ -778,6 +788,10 @@ function importContacts(input) {
         data.push({ id: ++maxId, nom, org: row['Organisation']||'', tel: row['Téléphone']||'', tel2: '',
           email, hasEmail: email.includes('@'), secteur, canton, palettecad: false,
           statut: row['Statut']||'Mail à envoyer', dateEnvoi: row['Date envoi']||'',
+          mailCampagne: row['Campagne']||'', mailSujet: row['Sujet du mail']||'',
+          dateReponse: row['Date réponse']||'', dateDesabonnement: row['Date désabonnement']||'',
+          nePlusContacter: (row['Ne plus contacter']||'').toLowerCase()==='oui',
+          unsubscribeToken: '',
           notes: row['Notes']||'' });
         if (email) existingEmails.add(email.toLowerCase());
         existingNoms.add(nom.toLowerCase());
