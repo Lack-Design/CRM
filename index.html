@@ -208,6 +208,7 @@
       <th onclick="sortBy('statut')">Statut ↕</th>
       <th>Date envoi</th>
       <th>Campagne</th>
+      <th style="text-align:center" title="Désabonnement / Ne plus contacter">Désabo</th>
       <th>Notes</th>
       <th></th>
     </tr>
@@ -339,6 +340,45 @@ async function findDriveFile() {
   return files && files.length ? files[0].id : null;
 }
 
+function normalizeUnsubscribeFields(list) {
+  let changed = false;
+  (list || []).forEach(c => {
+    const hasValidEmail = !!(c.email && c.email.includes('@'));
+    if (typeof c.nePlusContacter !== 'boolean') { c.nePlusContacter = false; changed = true; }
+    if (typeof c.dateDesabonnement !== 'string') { c.dateDesabonnement = ''; changed = true; }
+    if (hasValidEmail && !c.unsubscribeToken) { c.unsubscribeToken = generateUnsubscribeToken(); changed = true; }
+    if (c.statut === 'Désabonné') {
+      if (!c.nePlusContacter) { c.nePlusContacter = true; changed = true; }
+      if (!c.dateDesabonnement) { c.dateDesabonnement = new Date().toISOString().slice(0,10); changed = true; }
+    }
+  });
+  return changed;
+}
+
+function mergeRemoteUnsubscribeProtection(localList, remoteList) {
+  const byId = new Map((remoteList || []).map(c => [String(c.id), c]));
+  const byEmail = new Map();
+  (remoteList || []).forEach(c => {
+    const e = (c.email || '').trim().toLowerCase();
+    if (e && !byEmail.has(e)) byEmail.set(e, c);
+  });
+
+  (localList || []).forEach(c => {
+    const remote = byId.get(String(c.id)) || byEmail.get((c.email || '').trim().toLowerCase());
+    if (!remote) return;
+
+    // Toujours conserver le token déjà présent sur Drive.
+    if (remote.unsubscribeToken) c.unsubscribeToken = remote.unsubscribeToken;
+
+    // Un désabonnement enregistré sur Drive ne peut jamais être écrasé par une copie locale plus ancienne.
+    if (remote.nePlusContacter === true || remote.statut === 'Désabonné') {
+      c.nePlusContacter = true;
+      c.statut = 'Désabonné';
+      c.dateDesabonnement = remote.dateDesabonnement || c.dateDesabonnement || new Date().toISOString().slice(0,10);
+    }
+  });
+}
+
 async function loadFromDrive() {
   setIndicator('● Chargement Drive...', false);
   try {
@@ -346,7 +386,15 @@ async function loadFromDrive() {
     if (driveFileId) {
       const res = await gapi.client.drive.files.get({ fileId: driveFileId, alt: 'media' });
       data = JSON.parse(res.body);
-      setIndicator('● Drive chargé', true);
+      const normalized = normalizeUnsubscribeFields(data);
+      if (normalized) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        setIndicator('● Drive chargé — mise à niveau désabonnement', true);
+        // Les champs ajoutés seront enregistrés au prochain changement ou via ce save discret.
+        setTimeout(() => saveToDrive().catch(()=>{}), 200);
+      } else {
+        setIndicator('● Drive chargé', true);
+      }
     } else {
       // Pas encore de fichier Drive — utiliser données locales
       loadLocal();
@@ -360,6 +408,22 @@ async function loadFromDrive() {
 }
 
 async function saveToDrive() {
+  // Avant toute sauvegarde, compléter les tokens/champs manquants.
+  normalizeUnsubscribeFields(data);
+
+  // Protection anti-écrasement : relire la version Drive la plus récente et
+  // conserver tout désabonnement éventuellement enregistré entre-temps par Apps Script.
+  if (driveFileId) {
+    try {
+      const latest = await gapi.client.drive.files.get({ fileId: driveFileId, alt: 'media' });
+      const remoteData = JSON.parse(latest.body);
+      mergeRemoteUnsubscribeProtection(data, remoteData);
+      normalizeUnsubscribeFields(data);
+    } catch (e) {
+      console.warn('Protection désabonnement : lecture Drive impossible avant sauvegarde', e);
+    }
+  }
+
   const json = JSON.stringify(data);
   const blob = new Blob([json], { type: 'application/json' });
   if (driveFileId) {
@@ -382,7 +446,6 @@ async function saveToDrive() {
     const d = await res.json();
     driveFileId = d.id;
   }
-  // Aussi en local comme backup
   localStorage.setItem(STORAGE_KEY, json);
   setIndicator('● Sauvegardé', true);
 }
@@ -405,6 +468,7 @@ function loadLocal() {
 
 function init() {
   loadLocal();
+  normalizeUnsubscribeFields(data);
   applyFilters();
   setIndicator('● Local (connectez Drive)', false);
 }
@@ -521,6 +585,11 @@ function render(list) {
           ? `<span class="badge badge-Autre">${c.mailCampagne}</span>${c.dateReponse ? `<div style="margin-top:3px;color:#059669;">Réponse : ${c.dateReponse}</div>` : ''}`
           : '<span style="color:#d1d5db">—</span>'}
       </td>
+      <td style="text-align:center;font-size:10px;white-space:nowrap;">
+        ${(c.nePlusContacter || c.statut === 'Désabonné')
+          ? `<span title="Ne plus contacter${c.dateDesabonnement ? ' — '+c.dateDesabonnement : ''}" style="display:inline-block;background:#111827;color:#fff;border-radius:10px;padding:3px 7px;font-weight:600;">OUI</span>${c.dateDesabonnement ? `<div style="margin-top:2px;color:#6b7280;">${c.dateDesabonnement}</div>` : ''}`
+          : '<span style="color:#d1d5db">—</span>'}
+      </td>
       <td>
         <input type="text" class="notes-input" placeholder="Notes…" value="${c.notes || ''}" onchange="updateNotes(${c.id}, this.value)">
       </td>
@@ -583,7 +652,23 @@ function sortBy(col) {
 // UPDATES
 function updateStatut(id, sel) {
   const c = data.find(x => x.id === id);
-  if (c) { c.statut = sel.value; sel.className = statutClass(sel.value); scheduleSave(); applyFilters(); }
+  if (c) {
+    // Un désabonnement est un état protégé : il ne doit pas être annulé par accident.
+    if ((c.nePlusContacter || c.statut === 'Désabonné') && sel.value !== 'Désabonné') {
+      alert('Ce contact est désabonné / Ne plus contacter. Le statut reste Désabonné pour éviter un envoi accidentel.');
+      c.statut = 'Désabonné';
+      sel.value = 'Désabonné';
+    } else {
+      c.statut = sel.value;
+      if (sel.value === 'Désabonné') {
+        c.nePlusContacter = true;
+        if (!c.dateDesabonnement) c.dateDesabonnement = new Date().toISOString().slice(0,10);
+      }
+    }
+    sel.className = statutClass(c.statut);
+    scheduleSave();
+    applyFilters();
+  }
 }
 
 function updateDate(id, val) {
@@ -627,6 +712,16 @@ function confirmDelete() {
   applyFilters();
 }
 
+
+function generateUnsubscribeToken() {
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    return window.crypto.randomUUID() + '-' + window.crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(32);
+  window.crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // ADD
 function openAddModal() {
   document.getElementById('addNom').value = '';
@@ -666,7 +761,7 @@ function confirmAdd() {
     mailCampagne: '',
     mailSujet: '',
     dateReponse: '',
-    unsubscribeToken: '',
+    unsubscribeToken: email.includes('@') ? generateUnsubscribeToken() : '',
     dateDesabonnement: '',
     nePlusContacter: false,
     notes: ''
@@ -729,6 +824,7 @@ function editEmail(id) {
     const val = input.value.trim();
     c.email = val;
     c.hasEmail = val.includes('@');
+    if (c.hasEmail && !c.unsubscribeToken) c.unsubscribeToken = generateUnsubscribeToken();
     scheduleSave();
     applyFilters();
   }
@@ -791,7 +887,7 @@ function importContacts(input) {
           mailCampagne: row['Campagne']||'', mailSujet: row['Sujet du mail']||'',
           dateReponse: row['Date réponse']||'', dateDesabonnement: row['Date désabonnement']||'',
           nePlusContacter: (row['Ne plus contacter']||'').toLowerCase()==='oui',
-          unsubscribeToken: '',
+          unsubscribeToken: email.includes('@') ? generateUnsubscribeToken() : '',
           notes: row['Notes']||'' });
         if (email) existingEmails.add(email.toLowerCase());
         existingNoms.add(nom.toLowerCase());
